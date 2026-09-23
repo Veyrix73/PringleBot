@@ -37,7 +37,6 @@ const env = {
   groqKey: process.env.GROQ_API_KEY || '',
   groqModel: process.env.GROQ_MODEL || 'openai/gpt-oss-20b',
   fallbackModel: process.env.GROQ_FALLBACK_MODEL || 'llama-3.3-70b-versatile',
-  inactivityMinutes: Math.max(2, Number(process.env.INACTIVITY_MINUTES || 5)),
   port: Number(process.env.PORT || 10000),
 };
 
@@ -102,7 +101,6 @@ const client = new Client({
 const groq = env.groqKey ? new Groq({ apiKey: env.groqKey }) : null;
 const aiCooldown = new Map();
 const spamBuckets = new Map();
-const activity = new Map();
 
 function setupFor(guild) {
   return guilds[guild.id] || {};
@@ -140,7 +138,7 @@ function panelMessage() {
   return {
     embeds: [new EmbedBuilder()
       .setTitle('🍪 PringleSMP Support')
-      .setDescription('Need help? Open a private ticket below. Staff will be notified automatically.\n\n**AI Support:** ' + (env.aiEnabled && groq ? 'Online' : 'Disabled') + '\n**Auto-close:** ' + env.inactivityMinutes + ' minutes of inactivity')
+      .setDescription('Need help? Open a private ticket below. Staff will be notified automatically.\n\n**AI Support:** ' + (env.aiEnabled && groq ? 'Online' : 'Disabled') + '')
       .setFooter({ text: 'PringleBot • PringleSMP' })],
     components: [new ActionRowBuilder().addComponents(menu)],
   };
@@ -217,7 +215,6 @@ async function closeTicket(channel, closer, reason = 'Closed by staff') {
     attachment: Buffer.from(text, 'utf8'),
     name: fileName,
   });
-  activity.delete(channel.id);
   await channel.send('🔒 This ticket is closing. The transcript has been saved.').catch(() => {});
   setTimeout(() => channel.delete('PringleBot ticket closed').catch(() => {}), 2500);
   return true;
@@ -253,7 +250,6 @@ async function createTicket(interaction, type, subject, details) {
     reason: 'PringleBot ticket opened',
   });
 
-  activity.set(channel.id, { last: Date.now(), warned: false });
   const [name, desc] = ticketTypes[type] || ticketTypes.general;
   await channel.send({
     content: '<@' + interaction.user.id + '> <@&' + staffRole.id + '>',
@@ -328,38 +324,8 @@ async function registerCommands() {
   console.log('Registered ' + commands.length + ' slash commands ' + (env.guildId ? 'in guild ' + env.guildId : 'globally') + '.');
 }
 
-async function restoreActivity() {
-  for (const guild of client.guilds.cache.values()) {
-    for (const channel of guild.channels.cache.values()) {
-      const data = ticketFrom(channel);
-      if (!data || !channel.isTextBased()) continue;
-      const msgs = await channel.messages.fetch({ limit: 20 }).catch(() => null);
-      const human = msgs ? [...msgs.values()].filter(m => !m.author.bot).sort((a, b) => b.createdTimestamp - a.createdTimestamp)[0] : null;
-      activity.set(channel.id, { last: human?.createdTimestamp || Date.now(), warned: false });
-    }
-  }
-}
-
-async function autoClose() {
-  const now = Date.now();
-  for (const [channelId, state] of activity) {
-    const channel = client.channels.cache.get(channelId);
-    if (!channel || !channel.isTextBased() || !ticketFrom(channel)) { activity.delete(channelId); continue; }
-    const idle = now - state.last;
-    const limit = env.inactivityMinutes * 60000;
-    if (idle >= limit) {
-      await closeTicket(channel, 'PringleBot auto-close', 'No human activity for ' + env.inactivityMinutes + ' minutes');
-    } else if (idle >= Math.max(30000, limit - 60000) && !state.warned) {
-      state.warned = true;
-      await channel.send('⏳ This ticket has been inactive for a while. Reply within 1 minute to keep it open.').catch(() => {});
-    }
-  }
-}
-
 client.once('ready', async () => {
   console.log('🤖 Logged in as ' + client.user.tag + ' • ' + client.guilds.cache.size + ' guild(s)');
-  await restoreActivity();
-  setInterval(autoClose, 30000);
 });
 
 client.on('interactionCreate', async interaction => {
@@ -477,7 +443,6 @@ client.on('interactionCreate', async interaction => {
         if (!isStaff(interaction.member)) return interaction.reply({ content: 'Staff only.', ephemeral: true });
         data.claimedBy = interaction.user.id;
         await interaction.channel.setTopic('pringlebot:' + JSON.stringify(data));
-        activity.set(interaction.channel.id, { last: Date.now(), warned: false });
         return interaction.reply('🛠️ Claimed by <@' + interaction.user.id + '>.');
       }
       if (interaction.customId === 'ticket_close') {
