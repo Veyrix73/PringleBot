@@ -37,7 +37,5 @@ services:
         sync: false
       - key: LOG_CHANNEL_ID
         sync: false
-      - key: INACTIVITY_MINUTES
-        value: "5"
       - key: PORT
         value: "10000"
