@@ -1,0 +1,43 @@
+services:
+  - type: web
+    name: pringlebot
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 24.17.0
+      - key: DISCORD_TOKEN
+        sync: false
+      - key: CLIENT_ID
+        sync: false
+      - key: GUILD_ID
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-20b
+      - key: GROQ_FALLBACK_MODEL
+        value: llama-3.3-70b-versatile
+      - key: AI_ENABLED
+        value: "true"
+      - key: SERVER_NAME
+        value: PringleSMP
+      - key: MC_IP
+        value: pringlesmp.mcsh.io
+      - key: MC_PORT
+        value: "19132"
+      - key: DISCORD_INVITE
+        value: https://discord.gg/5BSSkFeNfR
+      - key: STAFF_ROLE_ID
+        sync: false
+      - key: TICKET_CATEGORY_ID
+        sync: false
+      - key: LOG_CHANNEL_ID
+        sync: false
+      - key: INACTIVITY_MINUTES
+        value: "5"
+      - key: PORT
+        value: "10000"
