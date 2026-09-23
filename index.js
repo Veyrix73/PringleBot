@@ -463,7 +463,6 @@ client.on('messageCreate', async message => {
   if (message.author.bot) return;
   const ticket = ticketFrom(message.channel);
   if (ticket) {
-    activity.set(message.channel.id, { last: Date.now(), warned: false });
     if (!recentSpam(message.author.id) && message.guild && ticket.ownerId === message.author.id) {
       const now = Date.now();
       const last = aiCooldown.get(message.author.id) || 0;
