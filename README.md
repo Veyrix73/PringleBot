@@ -17,7 +17,6 @@ PringleBot is the Discord support bot for PringleSMP. It is designed to run loca
 - Staff-only ticket management
 - Add/remove ticket users
 - Ticket transcripts sent to a private log channel
-- Automatic inactivity warning and auto-close
 - Anti-spam protection for AI replies
 - PringleAI with Groq and automatic fallback model
 - AI replies in DMs, ticket owner messages, /ask, and direct mentions
@@ -60,7 +59,6 @@ DISCORD_INVITE - default: https://discord.gg/5BSSkFeNfR
 STAFF_ROLE_ID
 TICKET_CATEGORY_ID
 LOG_CHANNEL_ID
-INACTIVITY_MINUTES - default: 5
 PORT - default: 10000
 
 ## Render
@@ -68,6 +66,8 @@ PORT - default: 10000
 This repository includes render.yaml.
 
 Set DISCORD_TOKEN, CLIENT_ID and GROQ_API_KEY as secret environment variables in Render. The included health endpoint listens on 0.0.0.0 and uses the Render PORT value.
+
+Ticket channels remain open until the user or staff member closes them.
 
 PringleBot stores per-server setup in data/guilds.json. Render web-service filesystems are ephemeral, so use the environment ID variables for durable configuration when needed.
 
